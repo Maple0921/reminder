@@ -714,12 +714,13 @@
 
     // ---- Init ----
     function init() {
-      loadData();
-      updateHeaderDate();
-      renderAll();
-      requestNotificationPermission();
-      startNotificationChecker();
-      bindEvents();
+      try { loadData(); } catch(e) { console.error('[初始化] loadData 失败:', e); }
+      try { updateHeaderDate(); } catch(e) { console.error('[初始化] updateHeaderDate 失败:', e); }
+      try { renderAll(); } catch(e) { console.error('[初始化] renderAll 失败:', e); }
+      try { requestNotificationPermission(); } catch(e) { console.error('[初始化] 通知权限检查失败:', e); }
+      try { startNotificationChecker(); } catch(e) { console.error('[初始化] 通知检查器启动失败:', e); }
+      try { bindEvents(); } catch(e) { console.error('[初始化] 事件绑定失败:', e); }
+      console.log('[初始化] 应用启动完成, 事项数量:', reminders.length);
     }
 
     // ---- Data ----
@@ -1313,8 +1314,10 @@
       });
 
       // Card actions (delegation)
+      // iOS Safari 兼容: e.target 可能是文本节点, 用 closest() 前需确保是 Element
       $('#activeList').addEventListener('click', (e) => {
-        const btn = e.target.closest('[data-action]');
+        const targetEl = e.target instanceof Element ? e.target : e.target.parentElement;
+        const btn = targetEl && targetEl.closest('[data-action]');
         if (!btn) return;
         const id = btn.dataset.id;
         switch (btn.dataset.action) {
@@ -1338,7 +1341,8 @@
       });
 
       $('#completedList').addEventListener('click', (e) => {
-        const btn = e.target.closest('[data-action]');
+        const targetEl = e.target instanceof Element ? e.target : e.target.parentElement;
+        const btn = targetEl && targetEl.closest('[data-action]');
         if (!btn) return;
         const id = btn.dataset.id;
         switch (btn.dataset.action) {
