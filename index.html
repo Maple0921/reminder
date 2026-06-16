@@ -1086,32 +1086,39 @@
     }
 
     function sendNotification(title, body) {
-      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+      console.log('[通知] 尝试发送:', title);
+      if (!('Notification' in window)) {
+        console.warn('[通知] 浏览器不支持 Notification API');
+        return false;
+      }
+      if (Notification.permission !== 'granted') {
+        console.warn('[通知] 权限未授予, 当前状态:', Notification.permission);
+        return false;
+      }
       try {
+        // 只使用 iOS Safari 兼容的选项: body, tag, icon
+        // 避免 badge/requireInteraction/vibrate (iOS 不支持, 会导致静默失败)
         const n = new Notification(title, {
           body,
-          icon: 'icon-192.png',
-          badge: 'icon-192.png',
           tag: 'reminder-pwa',
-          requireInteraction: true,
-          vibrate: [200, 100, 200],
+          icon: 'icon-192.png',
         });
-        n.onclick = () => {
-          window.focus();
-          n.close();
-        };
+        n.onclick = () => { window.focus(); n.close(); };
+        console.log('[通知] ✅ 系统通知已发送:', title);
+        return true;
       } catch(e) {
-        // Fallback: some browsers may not support all options
-        try { new Notification(title, { body }); } catch(e2) {}
+        console.warn('[通知] 系统通知失败:', e.message);
+        // 尝试最简调用
+        try { new Notification(title, { body }); console.log('[通知] ✅ fallback 成功'); return true; }
+        catch(e2) { console.warn('[通知] fallback 也失败:', e2.message); }
       }
+      return false;
     }
 
     function checkAndNotify() {
-      if (!('Notification' in window) || Notification.permission !== 'granted') return;
-
-      const now = new Date();
       const today = getTodayStr();
       const nowTime = getNowTimeStr();
+      let notificationSent = false;
 
       reminders.forEach(r => {
         if (r.completed) return;
@@ -1125,36 +1132,59 @@
         }
         if (!isActive) return;
 
-        // Check start notification
+        // ---- 通知检查 (去掉 5 分钟窗口限制, notifiedMap 防止重复) ----
+
+        // 1. 开始通知: 只要到达/超过开始时间就提醒
         const startKey = `${r.id}_${today}_start`;
-        if (!notifiedMap[startKey] && nowTime >= r.startTime && nowTime < addMinutes(r.startTime, 5)) {
-          sendNotification('🔔 提醒开始', `${r.title}\n开始时间：${r.startTime} 已经到了！`);
-          notifiedMap[startKey] = true;
+        if (!notifiedMap[startKey] && nowTime >= r.startTime) {
+          const ok = sendNotification('🔔 提醒开始', `${r.title}\n开始时间：${r.startTime} 已经到了！`);
+          if (ok) { notifiedMap[startKey] = true; notificationSent = true; }
+          // 页面内兜底
+          if (!ok || document.hidden) {
+            showToast(`🔔 ${r.title} — 开始时间 ${r.startTime} 已到`);
+          }
         }
 
-        // Check advance-before-end notification
+        // 2. 结束前提前提醒
         if (r.advanceMinutes > 0) {
           const endKey = `${r.id}_${today}_end`;
           const advanceTime = subtractMinutes(r.endTime, r.advanceMinutes);
           if (!notifiedMap[endKey] && nowTime >= advanceTime && nowTime < r.endTime) {
-            sendNotification('⏰ 即将结束提醒', `${r.title}\n将在 ${r.advanceMinutes} 分钟后（${r.endTime}）结束`);
-            notifiedMap[endKey] = true;
+            const ok = sendNotification('⏰ 即将结束提醒', `${r.title}\n将在 ${r.advanceMinutes} 分钟后（${r.endTime}）结束`);
+            if (ok) { notifiedMap[endKey] = true; notificationSent = true; }
+            if (!ok || document.hidden) {
+              showToast(`⏰ ${r.title} — 还有 ${r.advanceMinutes} 分钟结束`);
+            }
           }
         }
 
-        // Check overdue (end time passed)
+        // 3. 结束通知: 只要到达/超过结束时间就提醒
         const endKey2 = `${r.id}_${today}_end_overdue`;
-        if (!notifiedMap[endKey2] && nowTime >= r.endTime && nowTime < addMinutes(r.endTime, 5)) {
-          sendNotification('⏱️ 事项已结束', `${r.title}\n结束时间 ${r.endTime} 已到`);
-          notifiedMap[endKey2] = true;
+        if (!notifiedMap[endKey2] && nowTime >= r.endTime) {
+          const ok = sendNotification('⏱️ 事项已结束', `${r.title}\n结束时间 ${r.endTime} 已到`);
+          if (ok) { notifiedMap[endKey2] = true; notificationSent = true; }
+        }
+
+        // ---- 自动完成: 非重复事项结束后自动标记完成 ----
+        if (!r.repeat || r.repeat === 'none') {
+          // 结束时间已过 5 分钟以上，自动完成
+          if (nowTime >= addMinutes(r.endTime, 5)) {
+            console.log('[自动完成]', r.title, '结束时间已过，自动标记完成');
+            r.completed = true;
+            r.completedDate = new Date().toISOString();
+            saveData();
+            renderAll();
+            showToast(`✅ ${r.title} — 已自动完成`);
+          }
         }
       });
 
       // Cleanup old notification records (keep only today's)
-      const todayPrefix = today;
       Object.keys(notifiedMap).forEach(k => {
-        if (!k.includes(todayPrefix)) delete notifiedMap[k];
+        if (!k.includes(today)) delete notifiedMap[k];
       });
+
+      return notificationSent;
     }
 
     function addMinutes(timeStr, mins) {
@@ -1176,12 +1206,26 @@
 
     function startNotificationChecker() {
       // Initial check
+      console.log('[通知] 启动通知检查器, 当前权限:', Notification.permission);
       checkAndNotify();
+
       // Periodic check
       setInterval(() => {
         updateHeaderDate();
         checkAndNotify();
       }, NOTIFY_CHECK_INTERVAL);
+
+      // 🔑 关键修复: 监听页面可见性变化
+      // iOS PWA 在后台时 setInterval 会被暂停
+      // 用户切回应用时立即检查一次，弥补错过的通知
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          console.log('[通知] 页面恢复可见，立即检查...');
+          updateHeaderDate();
+          checkAndNotify();
+          renderAll();
+        }
+      });
 
       // Also re-render every minute to keep "today" badges updated
       setInterval(() => {
