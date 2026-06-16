@@ -39,6 +39,33 @@
       --tab-height: 64px;
     }
 
+    /* ====== Dark Theme ====== */
+    [data-theme="dark"] {
+      --blue: #5DADE2;
+      --blue-light: #3A7CA5;
+      --blue-dark: #2E86C1;
+      --blue-bg: #1A2D3A;
+      --bg: #1A1D23;
+      --white: #252830;
+      --text: #E4E6EB;
+      --text-secondary: #A0A5AD;
+      --text-light: #6B7077;
+      --danger: #E74C3C;
+      --danger-light: #3D1F1F;
+      --success: #2ECC71;
+      --success-light: #1A3328;
+      --shadow: 0 2px 12px rgba(0,0,0,0.25);
+      --shadow-lg: 0 8px 30px rgba(0,0,0,0.4);
+    }
+
+    /* Smooth theme transition */
+    [data-theme] {
+      transition: background-color 0.4s ease, color 0.4s ease;
+    }
+    [data-theme] * {
+      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
       background: var(--bg);
@@ -119,6 +146,139 @@
       margin-top: 1px;
     }
 
+    /* ====== Goal Progress Ring ====== */
+    .goal-progress {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding: 12px 0 0;
+      margin-top: 12px;
+      border-top: 1px solid rgba(255,255,255,0.25);
+    }
+    .goal-ring {
+      position: relative;
+      width: 72px;
+      height: 72px;
+      flex-shrink: 0;
+    }
+    .goal-ring svg {
+      transform: rotate(-90deg);
+    }
+    .goal-ring-bg {
+      fill: none;
+      stroke: rgba(255,255,255,0.3);
+      stroke-width: 6;
+    }
+    .goal-ring-fill {
+      fill: none;
+      stroke: white;
+      stroke-width: 6;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.6s ease;
+    }
+    .goal-ring-text {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+    .goal-ring-pct {
+      font-size: 18px;
+      font-weight: 700;
+    }
+    .goal-ring-label {
+      font-size: 10px;
+      opacity: 0.85;
+    }
+    .goal-message {
+      font-size: 13px;
+      font-weight: 500;
+      color: white;
+      line-height: 1.4;
+    }
+    .goal-achieved {
+      font-size: 16px;
+    }
+
+    /* ====== Goal Editor ====== */
+    .goal-editor {
+      background: var(--bg);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      margin: -4px 0 16px;
+    }
+    .goal-input-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .goal-presets {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 4px;
+    }
+    .goal-preset {
+      padding: 6px 14px;
+      border-radius: 16px;
+      border: 1.5px solid var(--blue-light);
+      background: var(--white);
+      color: var(--blue-dark);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+    .goal-preset:active { transform: scale(0.95); }
+    .goal-preset.selected {
+      background: var(--blue);
+      color: white;
+      border-color: var(--blue);
+    }
+
+    /* ====== Theme Picker ====== */
+    .theme-picker {
+      background: var(--bg);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      margin: -4px 0 16px;
+    }
+    .theme-options {
+      display: flex;
+      gap: 8px;
+    }
+    .theme-option {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 14px 8px;
+      border-radius: var(--radius-xs);
+      border: 2px solid transparent;
+      background: var(--white);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      transition: all 0.2s;
+    }
+    .theme-option:active { transform: scale(0.97); }
+    .theme-option.selected {
+      border-color: var(--blue);
+      background: var(--blue-bg);
+      color: var(--blue-dark);
+      font-weight: 600;
+    }
+    .theme-option-icon { font-size: 24px; }
+
     /* ====== History ====== */
     .history-date-header {
       font-size: 14px;
@@ -163,6 +323,131 @@
       color: var(--success);
       font-weight: 600;
       margin-top: 2px;
+    }
+    .history-item-duration-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-edit-duration {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      font-size: 13px;
+      cursor: pointer;
+      color: var(--text-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      font-family: inherit;
+      flex-shrink: 0;
+    }
+    .btn-edit-duration:hover { background: var(--bg); color: var(--text-secondary); }
+    .duration-edit-input {
+      width: 64px;
+      padding: 4px 8px;
+      border: 2px solid var(--blue);
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      text-align: center;
+      color: var(--blue-dark);
+      font-family: inherit;
+      background: var(--white);
+    }
+    .duration-edit-input:focus { outline: none; }
+    .duration-edit-actions {
+      display: flex;
+      gap: 4px;
+      margin-top: 4px;
+    }
+    .duration-edit-actions button {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      font-family: inherit;
+      line-height: 1.4;
+    }
+    .btn-duration-save {
+      background: var(--success-light);
+      color: var(--success);
+    }
+    .btn-duration-cancel {
+      background: var(--bg);
+      color: var(--text-secondary);
+    }
+
+    /* ====== Weekly Chart ====== */
+    .weekly-chart {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+    }
+    .weekly-chart .chart-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 14px;
+    }
+    .chart-bars {
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-end;
+      gap: 4px;
+      height: 120px;
+      padding: 0 2px;
+    }
+    .chart-bar-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      height: 100%;
+      justify-content: flex-end;
+    }
+    .chart-bar {
+      width: 100%;
+      max-width: 36px;
+      border-radius: 6px 6px 0 0;
+      background: var(--blue-light);
+      min-height: 4px;
+      transition: height 0.5s ease;
+      position: relative;
+    }
+    .chart-bar.today-bar {
+      background: linear-gradient(180deg, var(--blue) 0%, var(--blue-dark) 100%);
+    }
+    .chart-bar-value {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+    .chart-labels {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 8px;
+      gap: 4px;
+    }
+    .chart-label {
+      flex: 1;
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-light);
+      max-width: 36px;
+    }
+    .chart-label.today-label {
+      color: var(--blue-dark);
+      font-weight: 700;
     }
 
     /* ====== Empty State ====== */
@@ -289,6 +574,60 @@
     .tag.advance { background: #FEF3C7; color: #B45309; }
     .tag.skipped { background: #FEE2E2; color: #991B1B; }
     .tag.date  { background: var(--blue-bg); color: var(--blue-dark); }
+    .tag.subject {
+      font-size: 12px;
+      padding: 3px 10px;
+      border-radius: 14px;
+      font-weight: 600;
+    }
+
+    /* ====== Tag Input & Quick Select ====== */
+    .tag-input-wrap { position: relative; }
+    .tag-quick-select {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    .tag-quick-chip {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 14px;
+      border: 1.5px solid #E0E0E0;
+      background: var(--white);
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .tag-quick-chip:active { transform: scale(0.95); }
+
+    /* ====== Tag Filter Pills ====== */
+    .tag-filters {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      padding: 0 2px;
+    }
+    .tag-pill {
+      font-size: 13px;
+      padding: 6px 14px;
+      border-radius: 16px;
+      border: 1.5px solid #E0E0E0;
+      background: var(--white);
+      cursor: pointer;
+      font-weight: 500;
+      color: var(--text-secondary);
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .tag-pill.active {
+      background: var(--blue);
+      color: white;
+      border-color: var(--blue);
+    }
+    .tag-pill:active { transform: scale(0.95); }
 
     /* Swipe delete hint */
     .reminder-card .swipe-hint {
@@ -627,6 +966,12 @@
   <!-- Tab: History -->
   <div class="tab-content" id="tab-history">
     <div class="stats-card" id="statsCard"></div>
+    <div class="tag-filters" id="tagFilters" style="display:none;"></div>
+    <div class="weekly-chart" id="weeklyChart" style="display:none;">
+      <div class="chart-title">📊 本周学习趋势</div>
+      <div class="chart-bars" id="chartBars"></div>
+      <div class="chart-labels" id="chartLabels"></div>
+    </div>
     <div class="empty-state" id="emptyHistory">
       <div class="icon">📊</div>
       <div class="title">还没有学习记录</div>
@@ -637,6 +982,36 @@
 
   <!-- Tab: Settings -->
   <div class="tab-content" id="tab-settings">
+    <div class="settings-section">
+      <h3>🎯 每日学习目标</h3>
+      <div class="settings-item" id="btnGoalSetting">
+        <div class="si-left">
+          <div class="si-icon" style="background:#FEF3C7;">🎯</div>
+          <span class="si-label">每日目标</span>
+        </div>
+        <span class="si-arrow" id="goalDisplay">未设置</span>
+      </div>
+      <div class="goal-editor" id="goalEditor" style="display:none;">
+        <div class="goal-editor-inner">
+          <label class="form-label">每日学习目标（小时）</label>
+          <div class="goal-input-row">
+            <input class="form-input" type="number" id="goalHours" placeholder="例如：3" min="0.5" max="24" step="0.5" inputmode="decimal" style="width:100px;text-align:center;">
+            <span style="font-size:15px;color:var(--text-secondary);">小时</span>
+          </div>
+          <div class="goal-presets">
+            <button class="goal-preset" data-hours="1">1h</button>
+            <button class="goal-preset" data-hours="2">2h</button>
+            <button class="goal-preset" data-hours="3">3h</button>
+            <button class="goal-preset" data-hours="4">4h</button>
+            <button class="goal-preset" data-hours="6">6h</button>
+            <button class="goal-preset" data-hours="8">8h</button>
+          </div>
+          <button class="btn btn-primary" id="btnSaveGoal" style="margin-top:12px;margin-right:8px;">💾 保存目标</button>
+          <button class="btn btn-secondary" id="btnClearGoal">清除目标</button>
+        </div>
+      </div>
+    </div>
+
     <div class="settings-section">
       <h3>📢 通知</h3>
       <div class="settings-item" id="btnNotifyPerm">
@@ -670,6 +1045,33 @@
           <span class="si-label" style="color:var(--danger);">清除所有数据</span>
         </div>
         <span class="si-arrow" style="color:var(--danger);">›</span>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3>🎨 外观</h3>
+      <div class="settings-item" id="btnTheme">
+        <div class="si-left">
+          <div class="si-icon" style="background:#EDF6F9;">🌓</div>
+          <span class="si-label">主题模式</span>
+        </div>
+        <span class="si-arrow" id="themeLabel">浅色</span>
+      </div>
+      <div class="theme-picker" id="themePicker" style="display:none;">
+        <div class="theme-options">
+          <button class="theme-option" data-theme="light">
+            <span class="theme-option-icon">☀️</span>
+            <span>浅色</span>
+          </button>
+          <button class="theme-option" data-theme="dark">
+            <span class="theme-option-icon">🌙</span>
+            <span>深色</span>
+          </button>
+          <button class="theme-option" data-theme="auto">
+            <span class="theme-option-icon">⚙️</span>
+            <span>跟随系统</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -760,6 +1162,16 @@
           </select>
         </div>
 
+        <div class="form-group">
+          <label class="form-label">🏷️ 标签（可选）</label>
+          <div class="tag-input-wrap">
+            <input class="form-input" type="text" id="formTag" placeholder="例如：数学、英语、编程..."
+                   list="tagSuggestions" autocomplete="off">
+            <datalist id="tagSuggestions"></datalist>
+          </div>
+          <div class="tag-quick-select" id="tagQuickSelect"></div>
+        </div>
+
         <button class="btn btn-primary" id="btnSave">💾 保存提醒</button>
         <button class="btn btn-secondary" id="btnCancel">取消</button>
         <button class="btn btn-danger" id="btnDelete" style="display:none;">🗑️ 删除此提醒</button>
@@ -782,11 +1194,63 @@
     const STORAGE_KEY = 'reminder_pwa_data';
     const NOTIFY_CHECK_INTERVAL = 30000; // 30秒检查一次
 
+    const TAG_COLORS = [
+      '#4A90D9', '#27AE60', '#E67E22', '#9B59B6', '#E74C3C',
+      '#1ABC9C', '#F39C12', '#3498DB', '#2ECC71', '#E91E63',
+      '#00BCD4', '#FF5722', '#795548', '#607D8B', '#8BC34A'
+    ];
+
     // ---- State ----
     let reminders = [];
     let editingId = null;
     let currentTab = 'tab-active';
     let notifiedMap = {}; // key: `${id}_${date}_${type}` → true
+    let activeTagFilter = '__all__'; // 标签筛选: '__all__' 或具体标签名
+
+    const GOAL_STORAGE_KEY = 'reminder_pwa_daily_goal';
+    let dailyGoalMinutes = 0; // 0 = 未设置
+
+    const THEME_STORAGE_KEY = 'reminder_pwa_theme';
+    let currentTheme = 'light'; // 'light' | 'dark' | 'auto'
+
+    // ---- 深色模式 ----
+    function loadTheme() {
+      try {
+        currentTheme = localStorage.getItem(THEME_STORAGE_KEY) || 'light';
+      } catch(e) {
+        currentTheme = 'light';
+      }
+      applyTheme();
+    }
+
+    function applyTheme() {
+      let effectiveTheme = currentTheme;
+      if (currentTheme === 'auto') {
+        effectiveTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      document.documentElement.setAttribute('data-theme', effectiveTheme);
+
+      // Update meta theme-color
+      const themeColor = effectiveTheme === 'dark' ? '#1A1D23' : '#7EC8E3';
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute('content', themeColor);
+
+      // Update theme label
+      const labels = { light: '浅色', dark: '深色', auto: '跟随系统' };
+      const labelEl = $('#themeLabel');
+      if (labelEl) labelEl.textContent = labels[currentTheme] || '浅色';
+
+      // Highlight selected theme option
+      $$('.theme-option').forEach(opt => {
+        opt.classList.toggle('selected', opt.dataset.theme === currentTheme);
+      });
+    }
+
+    function saveTheme(theme) {
+      currentTheme = theme;
+      localStorage.setItem(THEME_STORAGE_KEY, theme);
+      applyTheme();
+    }
 
     // ---- DOM refs ----
     const $ = (sel) => document.querySelector(sel);
@@ -794,6 +1258,8 @@
 
     // ---- Init ----
     function init() {
+      try { loadTheme(); } catch(e) { console.error('[初始化] loadTheme 失败:', e); }
+      try { loadGoal(); } catch(e) { console.error('[初始化] loadGoal 失败:', e); }
       try { loadData(); } catch(e) { console.error('[初始化] loadData 失败:', e); }
       try { autoCompleteOverdue(); } catch(e) { console.error('[初始化] autoCompleteOverdue 失败:', e); }
       try { updateHeaderDate(); } catch(e) { console.error('[初始化] updateHeaderDate 失败:', e); }
@@ -1024,6 +1490,7 @@
               ${doneToday ? '<span style="font-size:11px;color:var(--success);font-weight:600;">✓ 已完成</span>' : ''}
             </div>
             <div class="card-tags">
+              ${r.tag ? `<span class="tag subject" style="background:${getTagColor(r.tag)}15;color:${getTagColor(r.tag)};">🏷️ ${escapeHtml(r.tag)}</span>` : ''}
               <span class="tag date">📅 ${dateLabel}</span>
               ${repeatLabel ? `<span class="tag repeat">🔁 ${repeatLabel}</span>` : ''}
               ${totalDone > 0 ? `<span class="tag advance">📊 共完成 ${totalDone} 次</span>` : ''}
@@ -1034,6 +1501,122 @@
                 : ''}
             </div>
           </div>`;
+      }).join('');
+    }
+
+    // ---- 每日目标 ----
+    function loadGoal() {
+      try {
+        const raw = localStorage.getItem(GOAL_STORAGE_KEY);
+        dailyGoalMinutes = raw ? parseInt(raw) : 0;
+      } catch(e) {
+        dailyGoalMinutes = 0;
+      }
+    }
+
+    function saveGoal(minutes) {
+      dailyGoalMinutes = minutes;
+      if (minutes > 0) {
+        localStorage.setItem(GOAL_STORAGE_KEY, String(minutes));
+      } else {
+        localStorage.removeItem(GOAL_STORAGE_KEY);
+      }
+    }
+
+    function updateGoalDisplay() {
+      const el = $('#goalDisplay');
+      if (!el) return;
+      if (dailyGoalMinutes > 0) {
+        const h = Math.floor(dailyGoalMinutes / 60);
+        const m = dailyGoalMinutes % 60;
+        el.textContent = m > 0 ? `${h}小时${m}分钟` : `${h}小时`;
+      } else {
+        el.textContent = '未设置';
+      }
+    }
+
+    function renderGoalProgress(stats) {
+      if (dailyGoalMinutes <= 0) return '';
+      const pct = Math.min(Math.round((stats.todayMin / dailyGoalMinutes) * 100), 100);
+      const radius = 28;
+      const circumference = 2 * Math.PI * radius;
+      const offset = circumference - (pct / 100) * circumference;
+      const achieved = pct >= 100;
+
+      return `
+        <div class="goal-progress">
+          <div class="goal-ring">
+            <svg width="72" height="72" viewBox="0 0 72 72">
+              <circle class="goal-ring-bg" cx="36" cy="36" r="${radius}"/>
+              <circle class="goal-ring-fill" cx="36" cy="36" r="${radius}"
+                stroke-dasharray="${circumference.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}"/>
+            </svg>
+            <div class="goal-ring-text">
+              <div class="goal-ring-pct">${pct}%</div>
+              <div class="goal-ring-label">${stats.todayMin}/${dailyGoalMinutes}m</div>
+            </div>
+          </div>
+          <div class="goal-message">
+            ${achieved ? '<span class="goal-achieved">🎉 目标达成!</span>' : `已完成 ${pct}%`}
+          </div>
+        </div>`;
+    }
+
+    // ---- 标签系统 ----
+    function getTagColor(tag) {
+      if (!tag) return '';
+      let hash = 0;
+      for (let i = 0; i < tag.length; i++) {
+        hash = ((hash << 5) - hash) + tag.charCodeAt(i);
+        hash |= 0;
+      }
+      return TAG_COLORS[Math.abs(hash) % TAG_COLORS.length];
+    }
+
+    function getAllTags() {
+      const tagSet = new Set();
+      reminders.forEach(r => {
+        if (r.tag && r.tag.trim()) tagSet.add(r.tag.trim());
+      });
+      return Array.from(tagSet).sort((a, b) => a.localeCompare(b, 'zh'));
+    }
+
+    function renderTagFilters() {
+      const container = $('#tagFilters');
+      if (!container) return;
+      const tags = getAllTags();
+      if (tags.length === 0) {
+        container.style.display = 'none';
+        return;
+      }
+      container.style.display = 'flex';
+      const pills = ['__all__', ...tags].map(t => {
+        const label = t === '__all__' ? '全部' : t;
+        const activeClass = activeTagFilter === t ? ' active' : '';
+        const color = getTagColor(t);
+        const style = t !== '__all__'
+          ? `style="background:${activeTagFilter === t ? color : 'var(--white)'};color:${activeTagFilter === t ? 'white' : color};border-color:${color}"`
+          : '';
+        return `<button class="tag-pill${activeClass}" data-tag="${escapeHtml(t)}" ${style}>${escapeHtml(label)}</button>`;
+      }).join('');
+      container.innerHTML = pills;
+    }
+
+    function renderTagQuickSelect(selectedTag) {
+      const container = $('#tagQuickSelect');
+      if (!container) return;
+      const existingTags = getAllTags();
+      if (existingTags.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+      container.innerHTML = existingTags.map(t => {
+        const isSelected = t === selectedTag;
+        const color = getTagColor(t);
+        return `<span class="tag-quick-chip${isSelected ? ' selected' : ''}"
+          data-tag="${escapeHtml(t)}"
+          style="${isSelected ? 'background:' + color + ';color:white;border-color:' + color : 'color:' + color + ';border-color:' + color}">
+          ${escapeHtml(t)}</span>`;
       }).join('');
     }
 
@@ -1073,6 +1656,73 @@
       return m > 0 ? `${h}.${Math.round(m/6)}h` : `${h}h`;
     }
 
+    // ---- 本周趋势图 ----
+    function calculateWeeklyMinutes() {
+      const today = getTodayStr();
+      const now = new Date();
+      // 计算本周一
+      const dayOfWeek = now.getDay();
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+
+      const weekdays = ['一','二','三','四','五','六','日'];
+      const days = [];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(monday);
+        d.setDate(monday.getDate() + i);
+        const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        days.push({ dateStr, label: weekdays[i], minutes: 0, isToday: dateStr === today });
+      }
+
+      reminders.forEach(r => {
+        if (!r.completionLog) return;
+        // 标签筛选
+        if (activeTagFilter !== '__all__' && (r.tag || '') !== activeTagFilter) return;
+        r.completionLog.forEach(log => {
+          const day = days.find(d => d.dateStr === log.date);
+          if (day) day.minutes += (log.duration || 0);
+        });
+      });
+
+      const maxMin = Math.max(...days.map(d => d.minutes), 1);
+      return { days, maxMin };
+    }
+
+    function renderWeeklyChart() {
+      const chartEl = $('#weeklyChart');
+      if (!chartEl) return;
+      const { days, maxMin } = calculateWeeklyMinutes();
+      const hasData = days.some(d => d.minutes > 0);
+      chartEl.style.display = hasData ? 'block' : 'none';
+      if (!hasData) return;
+
+      let barsHtml = '';
+      days.forEach(d => {
+        const heightPct = maxMin > 0 ? Math.max((d.minutes / maxMin) * 100, 3) : 3;
+        let label = '';
+        if (d.minutes > 0) {
+          if (d.minutes >= 60) {
+            const h = Math.floor(d.minutes / 60);
+            const m = d.minutes % 60;
+            label = m > 0 ? `${h}h${m}m` : `${h}h`;
+          } else {
+            label = `${d.minutes}m`;
+          }
+        }
+        barsHtml += `<div class="chart-bar-wrap">
+          <div class="chart-bar-value">${label}</div>
+          <div class="chart-bar ${d.isToday ? 'today-bar' : ''}" style="height:${heightPct}%"></div>
+        </div>`;
+      });
+
+      const labelsHtml = days.map(d =>
+        `<div class="chart-label ${d.isToday ? 'today-label' : ''}">${d.label}</div>`
+      ).join('');
+
+      $('#chartBars').innerHTML = barsHtml;
+      $('#chartLabels').innerHTML = labelsHtml;
+    }
+
     // ---- 记录页渲染 ----
     function renderHistory() {
       const container = $('#historyList');
@@ -1092,6 +1742,7 @@
             completedAt: log.completedAt,
             duration: log.duration,
             reminderId: r.id,
+            tag: r.tag || '',
           });
         });
       });
@@ -1116,10 +1767,21 @@
               <div class="stat-label">总计</div>
               <div class="stat-sub">${stats.totalCount} 次</div>
             </div>
-          </div>`;
+          </div>
+          ${renderGoalProgress(stats)}`;
       }
 
-      if (allLogs.length === 0) {
+      // 标签筛选
+      renderTagFilters();
+      let filteredLogs = allLogs;
+      if (activeTagFilter !== '__all__') {
+        filteredLogs = allLogs.filter(l => l.tag === activeTagFilter);
+      }
+
+      // 用筛后的数据重新统计（仅更新趋势图，statsCard 保持全局统计）
+      renderWeeklyChart();
+
+      if (filteredLogs.length === 0) {
         container.innerHTML = '';
         empty.style.display = 'block';
         return;
@@ -1127,12 +1789,12 @@
       empty.style.display = 'none';
 
       // 按日期降序排列
-      allLogs.sort((a, b) => b.date.localeCompare(a.date) || b.completedAt.localeCompare(a.completedAt));
+      filteredLogs.sort((a, b) => b.date.localeCompare(a.date) || b.completedAt.localeCompare(a.completedAt));
 
       // 按日期分组
       let html = '';
       let currentDate = '';
-      allLogs.forEach(log => {
+      filteredLogs.forEach(log => {
         if (log.date !== currentDate) {
           currentDate = log.date;
           html += `<div class="history-date-header">📅 ${formatDateCN(log.date)} ${getDayOfWeekCN(log.date)}</div>`;
@@ -1144,13 +1806,61 @@
               <div class="history-item-time">🕐 ${log.startTime} → ${log.endTime}</div>
             </div>
             <div class="history-item-right">
-              <div class="history-item-duration">${log.duration} 分钟</div>
+              <div class="history-item-duration-group" data-reminder-id="${log.reminderId}" data-log-date="${log.date}">
+                <div class="history-item-duration">${log.duration} 分钟</div>
+                <button class="btn-edit-duration" data-action="editDuration" data-reminder-id="${log.reminderId}" data-log-date="${log.date}" title="编辑时长">✎</button>
+              </div>
               <div class="history-item-check">✓</div>
             </div>
           </div>`;
       });
 
       container.innerHTML = html;
+    }
+
+    // ---- 编辑时长 ----
+    function enterDurationEdit(reminderId, logDate) {
+      const group = document.querySelector(`[data-reminder-id="${reminderId}"][data-log-date="${logDate}"]`);
+      if (!group) return;
+      const reminder = reminders.find(r => r.id === reminderId);
+      if (!reminder) return;
+      const logEntry = reminder.completionLog.find(l => l.date === logDate);
+      if (!logEntry) return;
+
+      const currentDuration = logEntry.duration;
+      group.innerHTML = `
+        <input class="duration-edit-input" type="number" value="${currentDuration}" min="1" max="1440" inputmode="numeric">
+        <div class="duration-edit-actions">
+          <button class="btn-duration-save" data-action="saveDuration" data-reminder-id="${reminderId}" data-log-date="${logDate}">保存</button>
+          <button class="btn-duration-cancel" data-action="cancelDuration" data-reminder-id="${reminderId}" data-log-date="${logDate}">取消</button>
+        </div>
+      `;
+      const input = group.querySelector('.duration-edit-input');
+      if (input) { input.focus(); input.select(); }
+    }
+
+    function saveDurationEdit(reminderId, logDate) {
+      const group = document.querySelector(`[data-reminder-id="${reminderId}"][data-log-date="${logDate}"]`);
+      if (!group) return;
+      const input = group.querySelector('.duration-edit-input');
+      if (!input) return;
+      const newDuration = parseInt(input.value);
+      if (isNaN(newDuration) || newDuration < 1 || newDuration > 1440) {
+        showToast('请输入 1-1440 之间的分钟数');
+        return;
+      }
+      const reminder = reminders.find(r => r.id === reminderId);
+      if (!reminder) return;
+      const logEntry = reminder.completionLog.find(l => l.date === logDate);
+      if (!logEntry) return;
+      logEntry.duration = newDuration;
+      saveData();
+      renderHistory();
+      showToast('✅ 时长已更新');
+    }
+
+    function cancelDurationEdit() {
+      renderHistory();
     }
 
     function getDayOfWeekCN(dateStr) {
@@ -1202,7 +1912,16 @@
       $('#formEndTime').value = reminder ? reminder.endTime : '10:00';
       $('#formAdvance').value = reminder ? reminder.advanceMinutes : 5;
       $('#formRepeat').value = reminder ? reminder.repeat : 'none';
+      $('#formTag').value = reminder ? (reminder.tag || '') : '';
       $('#btnDelete').style.display = reminder ? 'block' : 'none';
+
+      // 更新标签建议
+      const existingTags = getAllTags();
+      $('#tagSuggestions').innerHTML = existingTags.map(t => `<option value="${escapeHtml(t)}">`).join('');
+
+      // 渲染快捷标签选择
+      renderTagQuickSelect(reminder ? reminder.tag : '');
+
       $('#modalOverlay').classList.add('show');
       setTimeout(() => $('#formTitle').focus(), 400);
     }
@@ -1225,6 +1944,7 @@
 
       const advanceMinutes = parseInt($('#formAdvance').value);
       const repeat = $('#formRepeat').value;
+      const tag = ($('#formTag').value || '').trim();
 
       if (editingId) {
         // Update existing
@@ -1232,7 +1952,7 @@
         if (idx !== -1) {
           reminders[idx] = {
             ...reminders[idx],
-            title, date, startTime, endTime, advanceMinutes, repeat,
+            title, date, startTime, endTime, advanceMinutes, repeat, tag,
             // Reset skipped dates if repeat changed
             skippedDates: reminders[idx].repeat === repeat ? (reminders[idx].skippedDates || []) : [],
           };
@@ -1241,7 +1961,7 @@
         // Create new
         reminders.push({
           id: generateId(),
-          title, date, startTime, endTime, advanceMinutes, repeat,
+          title, date, startTime, endTime, advanceMinutes, repeat, tag,
           completionLog: [],
           skippedDates: [],
           createdAt: new Date().toISOString(),
@@ -1587,6 +2307,7 @@
       const tabBtn = document.querySelector(`.tab-item[data-tab="${tabId}"]`);
       if (tabBtn) tabBtn.classList.add('active');
 
+      if (tabId === 'tab-settings') updateGoalDisplay();
       renderAll();
     }
 
@@ -1633,9 +2354,122 @@
         }
       });
 
+      // History list actions (delegation: edit duration)
+      $('#historyList').addEventListener('click', (e) => {
+        const targetEl = e.target instanceof Element ? e.target : e.target.parentElement;
+        const btn = targetEl && targetEl.closest('[data-action]');
+        if (!btn) return;
+        const reminderId = btn.dataset.reminderId;
+        const logDate = btn.dataset.logDate;
+        switch (btn.dataset.action) {
+          case 'editDuration': enterDurationEdit(reminderId, logDate); break;
+          case 'saveDuration': saveDurationEdit(reminderId, logDate); break;
+          case 'cancelDuration': cancelDurationEdit(); break;
+        }
+      });
+
+      // History list keyboard (Enter save, Escape cancel)
+      $('#historyList').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const input = e.target.closest('.duration-edit-input');
+          if (input) {
+            const group = input.closest('[data-reminder-id]');
+            if (group) saveDurationEdit(group.dataset.reminderId, group.dataset.logDate);
+          }
+        }
+        if (e.key === 'Escape') {
+          if (e.target.closest('.duration-edit-input')) cancelDurationEdit();
+        }
+      });
+
       // Tab bar
       $$('.tab-item').forEach(btn => {
         btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+      });
+
+      // Tag filter pills (history tab)
+      $('#tagFilters').addEventListener('click', (e) => {
+        const pill = e.target.closest('.tag-pill');
+        if (!pill) return;
+        activeTagFilter = pill.dataset.tag;
+        renderHistory();
+      });
+
+      // Tag quick select (modal)
+      $('#tagQuickSelect').addEventListener('click', (e) => {
+        const chip = e.target.closest('.tag-quick-chip');
+        if (!chip) return;
+        const tag = chip.dataset.tag;
+        $('#formTag').value = tag;
+        renderTagQuickSelect(tag);
+      });
+
+      // Goal setting
+      $('#btnGoalSetting').addEventListener('click', () => {
+        const editor = $('#goalEditor');
+        const isVisible = editor.style.display !== 'none';
+        editor.style.display = isVisible ? 'none' : 'block';
+        if (!isVisible) {
+          const h = dailyGoalMinutes > 0 ? dailyGoalMinutes / 60 : '';
+          $('#goalHours').value = h;
+          $$('.goal-preset').forEach(p => p.classList.remove('selected'));
+          if (h) {
+            const match = document.querySelector(`.goal-preset[data-hours=\"${h}\"]`);
+            if (match) match.classList.add('selected');
+          }
+        }
+      });
+
+      $('#btnSaveGoal').addEventListener('click', () => {
+        const hours = parseFloat($('#goalHours').value);
+        if (isNaN(hours) || hours < 0.5 || hours > 24) {
+          showToast('请输入 0.5-24 之间的小时数');
+          return;
+        }
+        saveGoal(Math.round(hours * 60));
+        updateGoalDisplay();
+        $('#goalEditor').style.display = 'none';
+        renderHistory();
+        showToast('✅ 每日目标已保存');
+      });
+
+      $('#btnClearGoal').addEventListener('click', () => {
+        saveGoal(0);
+        updateGoalDisplay();
+        $('#goalEditor').style.display = 'none';
+        renderHistory();
+        showToast('目标已清除');
+      });
+
+      // Goal preset buttons
+      $('#goalEditor').addEventListener('click', (e) => {
+        const preset = e.target.closest('.goal-preset');
+        if (!preset) return;
+        $('#goalHours').value = preset.dataset.hours;
+        $$('.goal-preset').forEach(p => p.classList.remove('selected'));
+        preset.classList.add('selected');
+      });
+
+      // Theme picker
+      $('#btnTheme').addEventListener('click', () => {
+        const picker = $('#themePicker');
+        picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
+        applyTheme(); // refresh selected highlight
+      });
+
+      $('#themePicker').addEventListener('click', (e) => {
+        const option = e.target.closest('.theme-option');
+        if (!option) return;
+        const theme = option.dataset.theme;
+        saveTheme(theme);
+        $('#themePicker').style.display = 'none';
+        const labels = { light: '浅色', dark: '深色', auto: '跟随系统' };
+        showToast(`🎨 主题已切换为${labels[theme] || theme}`);
+      });
+
+      // Listen for system theme changes
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+        if (currentTheme === 'auto') applyTheme();
       });
 
       // Settings
