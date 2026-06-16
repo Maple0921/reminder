@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="提醒事项">
+  <meta name="theme-color" content="#7EC8E3">
+  <meta name="description" content="简洁好用的提醒事项应用">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <title>提醒事项</title>
+  <style>
+    /* ====== CSS Reset & Variables ====== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue: #7EC8E3;
+      --blue-light: #A8D8EA;
+      --blue-dark: #5BA4BD;
+      --blue-bg: #EDF6F9;
+      --bg: #F5F7FA;
+      --white: #FFFFFF;
+      --text: #2C3E50;
+      --text-secondary: #7F8C8D;
+      --text-light: #BDC3C7;
+      --danger: #E74C3C;
+      --danger-light: #FDEDEC;
+      --success: #27AE60;
+      --success-light: #E8F8F0;
+      --warning: #F39C12;
+      --shadow: 0 2px 12px rgba(0,0,0,0.08);
+      --shadow-lg: 0 8px 30px rgba(0,0,0,0.12);
+      --radius: 16px;
+      --radius-sm: 10px;
+      --radius-xs: 8px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --tab-height: 64px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
+      padding-bottom: calc(var(--tab-height) + var(--safe-bottom) + 20px);
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* ====== Header ====== */
+    .header {
+      background: linear-gradient(135deg, var(--blue) 0%, var(--blue-dark) 100%);
+      color: white;
+      padding: 48px 20px 28px;
+      text-align: center;
+      border-radius: 0 0 28px 28px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 4px 20px rgba(126, 200, 227, 0.3);
+    }
+    .header h1 {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .header .subtitle {
+      font-size: 13px;
+      opacity: 0.85;
+      margin-top: 4px;
+      font-weight: 400;
+    }
+    .header .date-display {
+      font-size: 14px;
+      opacity: 0.9;
+      margin-top: 6px;
+      font-weight: 500;
+    }
+
+    /* ====== Tab Content ====== */
+    .tab-content { display: none; padding: 16px 16px 8px; }
+    .tab-content.active { display: block; }
+
+    /* ====== Empty State ====== */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-secondary);
+    }
+    .empty-state .icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+      opacity: 0.6;
+    }
+    .empty-state .title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .empty-state .desc {
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ====== Reminder Card ====== */
+    .reminder-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow);
+      position: relative;
+      transition: transform 0.2s, box-shadow 0.2s;
+      border-left: 4px solid var(--blue);
+      cursor: pointer;
+      overflow: hidden;
+    }
+    .reminder-card:active {
+      transform: scale(0.985);
+      box-shadow: var(--shadow-lg);
+    }
+    .reminder-card.completed-card {
+      border-left-color: var(--success);
+      opacity: 0.75;
+    }
+    .reminder-card .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .reminder-card .card-title {
+      font-size: 17px;
+      font-weight: 600;
+      flex: 1;
+      word-break: break-word;
+    }
+    .reminder-card.completed-card .card-title {
+      text-decoration: line-through;
+      color: var(--text-secondary);
+    }
+    .reminder-card .card-actions {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .reminder-card .btn-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+      color: var(--text-secondary);
+    }
+    .reminder-card .btn-icon:hover { background: var(--bg); }
+    .reminder-card .btn-icon.danger { color: var(--danger); }
+    .reminder-card .btn-icon.danger:hover { background: var(--danger-light); }
+    .reminder-card .btn-icon.check { color: var(--success); font-size: 20px; }
+    .reminder-card .btn-icon.check:hover { background: var(--success-light); }
+
+    .reminder-card .card-times {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      font-size: 14px;
+      color: var(--text-secondary);
+      flex-wrap: wrap;
+    }
+    .reminder-card .time-badge {
+      background: var(--blue-bg);
+      color: var(--blue-dark);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .reminder-card .time-sep {
+      color: var(--text-light);
+      font-size: 12px;
+    }
+
+    .reminder-card .card-tags {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    .reminder-card .tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .tag.repeat { background: #F0E6FD; color: #7C3AED; }
+    .tag.advance { background: #FEF3C7; color: #B45309; }
+    .tag.skipped { background: #FEE2E2; color: #991B1B; }
+    .tag.date  { background: var(--blue-bg); color: var(--blue-dark); }
+
+    /* Swipe delete hint */
+    .reminder-card .swipe-hint {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--danger);
+      color: white;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+    }
+
+    /* ====== FAB Button ====== */
+    .fab {
+      position: fixed;
+      bottom: calc(var(--tab-height) + var(--safe-bottom) + 24px);
+      right: 20px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--blue) 0%, var(--blue-dark) 100%);
+      color: white;
+      border: none;
+      font-size: 28px;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(126, 200, 227, 0.45);
+      z-index: 90;
+      transition: transform 0.2s, box-shadow 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .fab:active {
+      transform: scale(0.92);
+      box-shadow: 0 2px 8px rgba(126, 200, 227, 0.3);
+    }
+
+    /* ====== Bottom Tab Bar ====== */
+    .tab-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--white);
+      display: flex;
+      border-top: 1px solid rgba(0,0,0,0.06);
+      z-index: 100;
+      padding-bottom: var(--safe-bottom);
+      height: calc(var(--tab-height) + var(--safe-bottom));
+      box-shadow: 0 -2px 12px rgba(0,0,0,0.04);
+    }
+    .tab-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      border: none;
+      background: transparent;
+      color: var(--text-light);
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: color 0.2s;
+      padding: 8px 0;
+    }
+    .tab-item .tab-icon { font-size: 22px; transition: transform 0.2s; }
+    .tab-item.active { color: var(--blue); }
+    .tab-item.active .tab-icon { transform: scale(1.1); }
+    .tab-item .badge {
+      position: absolute;
+      top: 6px;
+      margin-left: 14px;
+      background: var(--danger);
+      color: white;
+      font-size: 10px;
+      min-width: 18px;
+      height: 18px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 5px;
+    }
+
+    /* ====== Modal ====== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 200;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .modal-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-sheet {
+      background: var(--white);
+      border-radius: 24px 24px 0 0;
+      width: 100%;
+      max-width: 500px;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 8px 0 0;
+      transform: translateY(100%);
+      transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    .modal-overlay.show .modal-sheet {
+      transform: translateY(0);
+    }
+
+    .modal-handle {
+      width: 36px;
+      height: 5px;
+      background: #D0D5DD;
+      border-radius: 3px;
+      margin: 0 auto 20px;
+    }
+    .modal-title {
+      font-size: 20px;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 20px;
+      padding: 0 24px;
+    }
+    .modal-body { padding: 0 24px 24px; }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .form-input, .form-select {
+      width: 100%;
+      padding: 12px 14px;
+      border: 2px solid #E8ECF0;
+      border-radius: var(--radius-xs);
+      font-size: 16px;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--bg);
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .form-input:focus, .form-select:focus {
+      outline: none;
+      border-color: var(--blue);
+      background: var(--white);
+    }
+    .form-select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237F8C8D' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 36px;
+    }
+    .form-row {
+      display: flex;
+      gap: 12px;
+    }
+    .form-row > * { flex: 1; }
+
+    .btn {
+      padding: 14px 24px;
+      border-radius: var(--radius-xs);
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.2s;
+      font-family: inherit;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--blue) 0%, var(--blue-dark) 100%);
+      color: white;
+      width: 100%;
+      box-shadow: 0 4px 12px rgba(126, 200, 227, 0.35);
+    }
+    .btn-secondary {
+      background: var(--bg);
+      color: var(--text);
+      width: 100%;
+      margin-top: 8px;
+    }
+    .btn-danger {
+      background: var(--danger-light);
+      color: var(--danger);
+      width: 100%;
+      margin-top: 8px;
+      font-size: 14px;
+    }
+
+    /* ====== Toast ====== */
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-120px);
+      background: var(--text);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 24px;
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 300;
+      transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+      pointer-events: none;
+      white-space: nowrap;
+      box-shadow: var(--shadow-lg);
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.success { background: var(--success); }
+
+    /* ====== Settings ====== */
+    .settings-section { margin-bottom: 24px; }
+    .settings-section h3 {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      padding: 0 4px;
+    }
+    .settings-item {
+      background: var(--white);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .settings-item:active { background: var(--bg); }
+    .settings-item .si-left { display: flex; align-items: center; gap: 12px; }
+    .settings-item .si-icon {
+      font-size: 22px;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .settings-item .si-label { font-size: 16px; font-weight: 500; }
+    .settings-item .si-arrow { color: var(--text-light); font-size: 14px; }
+
+    /* ====== Animations ====== */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .reminder-card { animation: fadeInUp 0.35s ease-out both; }
+
+    /* ====== Scrollbar ====== */
+    .modal-sheet::-webkit-scrollbar { width: 0; }
+    ::-webkit-scrollbar { width: 0; }
+
+    /* ====== Check toggle switch ====== */
+    .toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .toggle-label {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+    .toggle {
+      width: 48px;
+      height: 28px;
+      border-radius: 14px;
+      background: #D0D5DD;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .toggle.on { background: var(--blue); }
+    .toggle::after {
+      content: '';
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: white;
+      top: 2px;
+      left: 2px;
+      transition: transform 0.3s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .toggle.on::after { transform: translateX(20px); }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <h1>⏰ 提醒事项</h1>
+    <p class="subtitle">简洁 · 高效 · 不遗忘</p>
+    <p class="date-display" id="headerDate"></p>
+  </header>
+
+  <!-- Tab: Active Reminders -->
+  <div class="tab-content active" id="tab-active">
+    <div class="empty-state" id="emptyActive">
+      <div class="icon">📋</div>
+      <div class="title">还没有待办事项</div>
+      <div class="desc">点击右下角的 <b>+</b> 按钮<br>添加你的第一个提醒吧</div>
+    </div>
+    <div id="activeList"></div>
+  </div>
+
+  <!-- Tab: Completed -->
+  <div class="tab-content" id="tab-completed">
+    <div class="empty-state" id="emptyCompleted">
+      <div class="icon">✅</div>
+      <div class="title">暂无已完成事项</div>
+      <div class="desc">完成一个事项后，它会出现在这里</div>
+    </div>
+    <div id="completedList"></div>
+  </div>
+
+  <!-- Tab: Settings -->
+  <div class="tab-content" id="tab-settings">
+    <div class="settings-section">
+      <h3>📢 通知</h3>
+      <div class="settings-item" id="btnNotifyPerm">
+        <div class="si-left">
+          <div class="si-icon" style="background:#EDF6F9;">🔔</div>
+          <span class="si-label">通知权限</span>
+        </div>
+        <span class="si-arrow" id="notifyStatus">未授权</span>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3>📦 数据</h3>
+      <div class="settings-item" id="btnExport">
+        <div class="si-left">
+          <div class="si-icon" style="background:#E8F8F0;">📤</div>
+          <span class="si-label">导出数据备份</span>
+        </div>
+        <span class="si-arrow">›</span>
+      </div>
+      <div class="settings-item" id="btnImport">
+        <div class="si-left">
+          <div class="si-icon" style="background:#FEF3C7;">📥</div>
+          <span class="si-label">恢复数据备份</span>
+        </div>
+        <span class="si-arrow">›</span>
+      </div>
+      <div class="settings-item" id="btnClear">
+        <div class="si-left">
+          <div class="si-icon" style="background:#FDEDEC;">🗑️</div>
+          <span class="si-label" style="color:var(--danger);">清除所有数据</span>
+        </div>
+        <span class="si-arrow" style="color:var(--danger);">›</span>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3>ℹ️ 关于</h3>
+      <div class="settings-item">
+        <div class="si-left">
+          <div class="si-icon" style="background:#EDF6F9;">📱</div>
+          <span class="si-label">版本</span>
+        </div>
+        <span class="si-arrow">1.0.0</span>
+      </div>
+      <div class="settings-item">
+        <div class="si-left">
+          <div class="si-icon" style="background:#EDF6F9;">💡</div>
+          <span class="si-label">提示</span>
+        </div>
+        <span class="si-arrow" style="font-size:12px;text-align:right;max-width:200px;">添加到主屏幕<br>体验更佳 ›</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAB Button -->
+  <button class="fab" id="fabAdd" title="添加提醒">+</button>
+
+  <!-- Bottom Tab Bar -->
+  <nav class="tab-bar">
+    <button class="tab-item active" data-tab="tab-active">
+      <span class="tab-icon">📋</span>
+      <span>事项</span>
+    </button>
+    <button class="tab-item" data-tab="tab-completed">
+      <span class="tab-icon">✅</span>
+      <span>已完成</span>
+    </button>
+    <button class="tab-item" data-tab="tab-settings">
+      <span class="tab-icon">⚙️</span>
+      <span>设置</span>
+    </button>
+  </nav>
+
+  <!-- Add/Edit Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-sheet" id="modalSheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title" id="modalTitle">新建提醒</div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">事项名称</label>
+          <input class="form-input" type="text" id="formTitle" placeholder="例如：开会、喝水、运动...">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">日期</label>
+          <input class="form-input" type="date" id="formDate">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">开始时间</label>
+            <input class="form-input" type="time" id="formStartTime">
+          </div>
+          <div class="form-group">
+            <label class="form-label">结束时间</label>
+            <input class="form-input" type="time" id="formEndTime">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">结束前提前提醒</label>
+          <select class="form-select" id="formAdvance">
+            <option value="0">不提前提醒</option>
+            <option value="5" selected>提前 5 分钟</option>
+            <option value="10">提前 10 分钟</option>
+            <option value="15">提前 15 分钟</option>
+            <option value="30">提前 30 分钟</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">重复周期</label>
+          <select class="form-select" id="formRepeat">
+            <option value="none">不重复（仅一次）</option>
+            <option value="daily">每天</option>
+            <option value="weekly">每周</option>
+            <option value="monthly">每月</option>
+            <option value="yearly">每年</option>
+          </select>
+        </div>
+
+        <button class="btn btn-primary" id="btnSave">💾 保存提醒</button>
+        <button class="btn btn-secondary" id="btnCancel">取消</button>
+        <button class="btn btn-danger" id="btnDelete" style="display:none;">🗑️ 删除此提醒</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Hidden import trigger -->
+  <input type="file" id="importFileInput" accept=".json" style="display:none;">
+
+  <script>
+    // ============================================================
+    //  REMINDER PWA APP — 提醒事项
+    // ============================================================
+
+    // ---- Constants ----
+    const STORAGE_KEY = 'reminder_pwa_data';
+    const NOTIFY_CHECK_INTERVAL = 30000; // 30秒检查一次
+
+    // ---- State ----
+    let reminders = [];
+    let editingId = null;
+    let currentTab = 'tab-active';
+    let notifiedMap = {}; // key: `${id}_${date}_${type}` → true
+
+    // ---- DOM refs ----
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => document.querySelectorAll(sel);
+
+    // ---- Init ----
+    function init() {
+      loadData();
+      updateHeaderDate();
+      renderAll();
+      requestNotificationPermission();
+      startNotificationChecker();
+      bindEvents();
+    }
+
+    // ---- Data ----
+    function loadData() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        reminders = raw ? JSON.parse(raw) : [];
+      } catch(e) {
+        reminders = [];
+      }
+    }
+
+    function saveData() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(reminders));
+    }
+
+    function generateId() {
+      return 'r_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+    }
+
+    // ---- Header ----
+    function updateHeaderDate() {
+      const now = new Date();
+      const weekdays = ['日','一','二','三','四','五','六'];
+      const y = now.getFullYear();
+      const m = now.getMonth() + 1;
+      const d = now.getDate();
+      const w = weekdays[now.getDay()];
+      $('#headerDate').textContent = `${y}年${m}月${d}日 星期${w}`;
+    }
+
+    // ---- Render ----
+    function renderAll() {
+      renderActiveList();
+      renderCompletedList();
+      renderTabBadge();
+    }
+
+    function getTodayStr() {
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    }
+
+    function getNowTimeStr() {
+      const now = new Date();
+      return `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    }
+
+    // Check if a repeating reminder applies on a given date string "YYYY-MM-DD"
+    function matchesRepeat(reminder, dateStr) {
+      if (!reminder.repeat || reminder.repeat === 'none') return false;
+      const baseDate = reminder.date; // "YYYY-MM-DD"
+      const base = new Date(baseDate);
+      const target = new Date(dateStr);
+
+      // Target must be on or after base date
+      if (target < new Date(baseDate)) return false;
+
+      // Check if this date is skipped
+      if (reminder.skippedDates && reminder.skippedDates.includes(dateStr)) return false;
+
+      switch (reminder.repeat) {
+        case 'daily': return true;
+        case 'weekly': return base.getDay() === target.getDay();
+        case 'monthly': return base.getDate() === target.getDate();
+        case 'yearly': return base.getMonth() === target.getMonth() && base.getDate() === target.getDate();
+        default: return false;
+      }
+    }
+
+    // Get the display date for a reminder: if repeating, today; else the specific date
+    function getEffectiveDate(reminder) {
+      if (reminder.repeat && reminder.repeat !== 'none') {
+        // For repeating reminders, check if today matches
+        const today = getTodayStr();
+        if (matchesRepeat(reminder, today)) return today;
+        // Find next matching date within a reasonable range
+        return findNextOccurrence(reminder, today);
+      }
+      return reminder.date;
+    }
+
+    function findNextOccurrence(reminder, fromDateStr) {
+      const from = new Date(fromDateStr);
+      // Look ahead up to 365 days
+      for (let i = 0; i <= 365; i++) {
+        const check = new Date(from);
+        check.setDate(check.getDate() + i);
+        const checkStr = `${check.getFullYear()}-${String(check.getMonth()+1).padStart(2,'0')}-${String(check.getDate()).padStart(2,'0')}`;
+        if (matchesRepeat(reminder, checkStr)) return checkStr;
+      }
+      return null;
+    }
+
+    function isActiveToday(reminder) {
+      const today = getTodayStr();
+      if (reminder.repeat && reminder.repeat !== 'none') {
+        return matchesRepeat(reminder, today);
+      }
+      return reminder.date === today;
+    }
+
+    function sortActive(a, b) {
+      const dateA = getEffectiveDate(a) || '9999';
+      const dateB = getEffectiveDate(b) || '9999';
+      if (dateA !== dateB) return dateA.localeCompare(dateB);
+      return (a.startTime || '00:00').localeCompare(b.startTime || '00:00');
+    }
+
+    function renderActiveList() {
+      const active = reminders.filter(r => !r.completed).sort(sortActive);
+      const container = $('#activeList');
+      const empty = $('#emptyActive');
+
+      if (active.length === 0) {
+        container.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+      }
+      empty.style.display = 'none';
+
+      container.innerHTML = active.map((r, i) => {
+        const effDate = getEffectiveDate(r);
+        const dateLabel = effDate ? formatDateCN(effDate) : '—';
+        const isToday = effDate === getTodayStr();
+        const repeatLabel = getRepeatLabel(r.repeat);
+        const advanceLabel = r.advanceMinutes > 0 ? `提前${r.advanceMinutes}分钟` : '';
+        const isSkippedToday = r.repeat && r.repeat !== 'none' && r.skippedDates && r.skippedDates.includes(getTodayStr());
+
+        return `
+          <div class="reminder-card ${isSkippedToday ? 'completed-card' : ''}" style="animation-delay:${i * 0.04}s" data-id="${r.id}">
+            <div class="card-header">
+              <span class="card-title" style="${isSkippedToday ? 'text-decoration: line-through;' : ''}">${escapeHtml(r.title)}</span>
+              <div class="card-actions">
+                <button class="btn-icon check" data-action="complete" data-id="${r.id}" title="标记完成">✓</button>
+                <button class="btn-icon" data-action="edit" data-id="${r.id}" title="编辑">✎</button>
+                <button class="btn-icon danger" data-action="delete" data-id="${r.id}" title="删除">✕</button>
+              </div>
+            </div>
+            <div class="card-times">
+              <span class="time-badge">🕐 ${r.startTime}</span>
+              <span class="time-sep">→</span>
+              <span class="time-badge">🕑 ${r.endTime}</span>
+              ${isToday ? '<span style="font-size:11px;color:var(--blue);font-weight:600;">今天</span>' : ''}
+            </div>
+            <div class="card-tags">
+              <span class="tag date">📅 ${dateLabel}</span>
+              ${repeatLabel ? `<span class="tag repeat">🔁 ${repeatLabel}</span>` : ''}
+              ${advanceLabel ? `<span class="tag advance">⏰ ${advanceLabel}</span>` : ''}
+              ${isSkippedToday ? '<span class="tag skipped">⏭️ 今天已跳过</span>' : ''}
+              ${r.repeat && r.repeat !== 'none' && !isSkippedToday && effDate === getTodayStr()
+                ? `<button class="tag skipped" data-action="skip" data-id="${r.id}" style="cursor:pointer;border:none;">⏭️ 跳过今天</button>`
+                : ''}
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function renderCompletedList() {
+      const completed = reminders.filter(r => r.completed).sort((a,b) => {
+        return (b.completedDate || '').localeCompare(a.completedDate || '');
+      });
+      const container = $('#completedList');
+      const empty = $('#emptyCompleted');
+
+      if (completed.length === 0) {
+        container.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+      }
+      empty.style.display = 'none';
+
+      container.innerHTML = completed.map((r, i) => `
+        <div class="reminder-card completed-card" style="animation-delay:${i * 0.03}s" data-id="${r.id}">
+          <div class="card-header">
+            <span class="card-title">${escapeHtml(r.title)}</span>
+            <div class="card-actions">
+              <button class="btn-icon" data-action="restore" data-id="${r.id}" title="恢复">↩️</button>
+              <button class="btn-icon danger" data-action="delete" data-id="${r.id}" title="删除">✕</button>
+            </div>
+          </div>
+          <div class="card-times">
+            <span class="time-badge">🕐 ${r.startTime} → 🕑 ${r.endTime}</span>
+          </div>
+          <div class="card-tags">
+            <span class="tag date">📅 ${formatDateCN(r.date)}</span>
+            ${r.completedDate ? `<span class="tag advance">✅ 完成于 ${formatDateTimeCN(r.completedDate)}</span>` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderTabBadge() {
+      const count = reminders.filter(r => !r.completed).length;
+      // No badge needed with bottom tab style
+    }
+
+    // ---- Helpers ----
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function formatDateCN(dateStr) {
+      if (!dateStr) return '';
+      const parts = dateStr.split('-');
+      return `${parseInt(parts[0])}年${parseInt(parts[1])}月${parseInt(parts[2])}日`;
+    }
+
+    function formatDateTimeCN(isoStr) {
+      if (!isoStr) return '';
+      const d = new Date(isoStr);
+      return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    }
+
+    function getRepeatLabel(repeat) {
+      const map = { daily: '每天', weekly: '每周', monthly: '每月', yearly: '每年', none: '' };
+      return map[repeat] || '';
+    }
+
+    // ---- Modal ----
+    function openModal(reminder = null) {
+      editingId = reminder ? reminder.id : null;
+      $('#modalTitle').textContent = reminder ? '编辑提醒' : '新建提醒';
+      $('#formTitle').value = reminder ? reminder.title : '';
+      $('#formDate').value = reminder ? reminder.date : getTodayStr();
+      $('#formStartTime').value = reminder ? reminder.startTime : '09:00';
+      $('#formEndTime').value = reminder ? reminder.endTime : '10:00';
+      $('#formAdvance').value = reminder ? reminder.advanceMinutes : 5;
+      $('#formRepeat').value = reminder ? reminder.repeat : 'none';
+      $('#btnDelete').style.display = reminder ? 'block' : 'none';
+      $('#modalOverlay').classList.add('show');
+      setTimeout(() => $('#formTitle').focus(), 400);
+    }
+
+    function closeModal() {
+      $('#modalOverlay').classList.remove('show');
+      editingId = null;
+    }
+
+    function saveReminder() {
+      const title = $('#formTitle').value.trim();
+      if (!title) { showToast('请输入事项名称 ⚠️'); $('#formTitle').focus(); return; }
+
+      const date = $('#formDate').value;
+      const startTime = $('#formStartTime').value;
+      const endTime = $('#formEndTime').value;
+      if (!date || !startTime || !endTime) { showToast('请完整填写日期和时间 ⚠️'); return; }
+
+      if (endTime <= startTime) { showToast('结束时间必须晚于开始时间 ⚠️'); return; }
+
+      const advanceMinutes = parseInt($('#formAdvance').value);
+      const repeat = $('#formRepeat').value;
+
+      if (editingId) {
+        // Update existing
+        const idx = reminders.findIndex(r => r.id === editingId);
+        if (idx !== -1) {
+          reminders[idx] = {
+            ...reminders[idx],
+            title, date, startTime, endTime, advanceMinutes, repeat,
+            // Reset skipped dates if repeat changed
+            skippedDates: reminders[idx].repeat === repeat ? (reminders[idx].skippedDates || []) : [],
+          };
+        }
+      } else {
+        // Create new
+        reminders.push({
+          id: generateId(),
+          title, date, startTime, endTime, advanceMinutes, repeat,
+          completed: false,
+          completedDate: null,
+          skippedDates: [],
+          createdAt: new Date().toISOString(),
+        });
+      }
+
+      saveData();
+      closeModal();
+      renderAll();
+      showToast(editingId ? '✅ 提醒已更新' : '✅ 提醒已创建');
+    }
+
+    function deleteReminder(id) {
+      if (!confirm('确定要删除这个提醒吗？此操作不可恢复。')) return;
+      reminders = reminders.filter(r => r.id !== id);
+      saveData();
+      closeModal();
+      renderAll();
+      showToast('🗑️ 提醒已删除');
+    }
+
+    function completeReminder(id) {
+      const idx = reminders.findIndex(r => r.id === id);
+      if (idx === -1) return;
+      reminders[idx].completed = true;
+      reminders[idx].completedDate = new Date().toISOString();
+      saveData();
+      renderAll();
+      showToast('✅ 已完成！');
+    }
+
+    function restoreReminder(id) {
+      const idx = reminders.findIndex(r => r.id === id);
+      if (idx === -1) return;
+      reminders[idx].completed = false;
+      reminders[idx].completedDate = null;
+      saveData();
+      renderAll();
+      showToast('↩️ 已恢复');
+    }
+
+    function skipToday(id) {
+      const idx = reminders.findIndex(r => r.id === id);
+      if (idx === -1) return;
+      const today = getTodayStr();
+      if (!reminders[idx].skippedDates) reminders[idx].skippedDates = [];
+      if (!reminders[idx].skippedDates.includes(today)) {
+        reminders[idx].skippedDates.push(today);
+        saveData();
+        renderAll();
+        showToast('⏭️ 今天已跳过，下次继续');
+      }
+    }
+
+    // ---- Notifications ----
+    async function requestNotificationPermission() {
+      if (!('Notification' in window)) {
+        updateNotifyStatus('不支持');
+        return;
+      }
+      if (Notification.permission === 'granted') {
+        updateNotifyStatus('已授权 ✓');
+      } else if (Notification.permission === 'denied') {
+        updateNotifyStatus('已拒绝 ✗');
+      } else {
+        updateNotifyStatus('点击授权');
+      }
+    }
+
+    async function askNotificationPermission() {
+      if (!('Notification' in window)) {
+        showToast('你的浏览器不支持通知功能');
+        return;
+      }
+      if (Notification.permission === 'granted') {
+        showToast('通知权限已开启 ✓');
+        updateNotifyStatus('已授权 ✓');
+        return;
+      }
+      const result = await Notification.requestPermission();
+      if (result === 'granted') {
+        showToast('✅ 通知权限已开启');
+        updateNotifyStatus('已授权 ✓');
+      } else {
+        showToast('⚠️ 通知权限被拒绝，将无法收到提醒');
+        updateNotifyStatus('已拒绝 ✗');
+      }
+    }
+
+    function updateNotifyStatus(text) {
+      $('#notifyStatus').textContent = text;
+    }
+
+    function sendNotification(title, body) {
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+      try {
+        const n = new Notification(title, {
+          body,
+          icon: 'icon-192.png',
+          badge: 'icon-192.png',
+          tag: 'reminder-pwa',
+          requireInteraction: true,
+          vibrate: [200, 100, 200],
+        });
+        n.onclick = () => {
+          window.focus();
+          n.close();
+        };
+      } catch(e) {
+        // Fallback: some browsers may not support all options
+        try { new Notification(title, { body }); } catch(e2) {}
+      }
+    }
+
+    function checkAndNotify() {
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+      const now = new Date();
+      const today = getTodayStr();
+      const nowTime = getNowTimeStr();
+
+      reminders.forEach(r => {
+        if (r.completed) return;
+
+        // Determine if this reminder is active today
+        let isActive = false;
+        if (r.repeat && r.repeat !== 'none') {
+          isActive = matchesRepeat(r, today);
+        } else {
+          isActive = (r.date === today);
+        }
+        if (!isActive) return;
+
+        // Check start notification
+        const startKey = `${r.id}_${today}_start`;
+        if (!notifiedMap[startKey] && nowTime >= r.startTime && nowTime < addMinutes(r.startTime, 5)) {
+          sendNotification('🔔 提醒开始', `${r.title}\n开始时间：${r.startTime} 已经到了！`);
+          notifiedMap[startKey] = true;
+        }
+
+        // Check advance-before-end notification
+        if (r.advanceMinutes > 0) {
+          const endKey = `${r.id}_${today}_end`;
+          const advanceTime = subtractMinutes(r.endTime, r.advanceMinutes);
+          if (!notifiedMap[endKey] && nowTime >= advanceTime && nowTime < r.endTime) {
+            sendNotification('⏰ 即将结束提醒', `${r.title}\n将在 ${r.advanceMinutes} 分钟后（${r.endTime}）结束`);
+            notifiedMap[endKey] = true;
+          }
+        }
+
+        // Check overdue (end time passed)
+        const endKey2 = `${r.id}_${today}_end_overdue`;
+        if (!notifiedMap[endKey2] && nowTime >= r.endTime && nowTime < addMinutes(r.endTime, 5)) {
+          sendNotification('⏱️ 事项已结束', `${r.title}\n结束时间 ${r.endTime} 已到`);
+          notifiedMap[endKey2] = true;
+        }
+      });
+
+      // Cleanup old notification records (keep only today's)
+      const todayPrefix = today;
+      Object.keys(notifiedMap).forEach(k => {
+        if (!k.includes(todayPrefix)) delete notifiedMap[k];
+      });
+    }
+
+    function addMinutes(timeStr, mins) {
+      const [h, m] = timeStr.split(':').map(Number);
+      const total = h * 60 + m + mins;
+      const nh = Math.floor(total / 60) % 24;
+      const nm = total % 60;
+      return `${String(nh).padStart(2,'0')}:${String(nm).padStart(2,'0')}`;
+    }
+
+    function subtractMinutes(timeStr, mins) {
+      const [h, m] = timeStr.split(':').map(Number);
+      const total = h * 60 + m - mins;
+      const nh = ((total % 1440) + 1440) % 1440; // handle negative wrap
+      const nm = Math.floor(nh % 60);
+      const nhr = Math.floor(nh / 60);
+      return `${String(nhr).padStart(2,'0')}:${String(nm).padStart(2,'0')}`;
+    }
+
+    function startNotificationChecker() {
+      // Initial check
+      checkAndNotify();
+      // Periodic check
+      setInterval(() => {
+        updateHeaderDate();
+        checkAndNotify();
+      }, NOTIFY_CHECK_INTERVAL);
+
+      // Also re-render every minute to keep "today" badges updated
+      setInterval(() => {
+        renderActiveList();
+      }, 60000);
+    }
+
+    // ---- Toast ----
+    let toastTimer;
+    function showToast(msg) {
+      const toast = $('#toast');
+      clearTimeout(toastTimer);
+      toast.textContent = msg;
+      toast.className = 'toast show';
+      toastTimer = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2200);
+    }
+
+    // ---- Settings Actions ----
+    function exportData() {
+      const blob = new Blob([JSON.stringify(reminders, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `reminder-backup-${getTodayStr()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('📤 数据已导出');
+    }
+
+    function importData(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (!Array.isArray(data)) throw new Error('格式错误');
+          if (!confirm(`即将导入 ${data.length} 条提醒事项，会覆盖当前数据，确定继续？`)) return;
+          reminders = data;
+          saveData();
+          renderAll();
+          showToast(`📥 成功导入 ${data.length} 条提醒`);
+        } catch(err) {
+          showToast('⚠️ 文件格式不正确');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function clearAllData() {
+      if (!confirm('确定要清除所有数据吗？此操作不可恢复！\n\n建议先导出备份。')) return;
+      if (!confirm('再次确认：真的要清除所有提醒事项吗？')) return;
+      reminders = [];
+      saveData();
+      renderAll();
+      showToast('🗑️ 所有数据已清除');
+    }
+
+    // ---- Tab Switching ----
+    function switchTab(tabId) {
+      currentTab = tabId;
+      $$('.tab-content').forEach(el => el.classList.remove('active'));
+      $$('.tab-item').forEach(el => el.classList.remove('active'));
+
+      $(`#${tabId}`).classList.add('active');
+      const tabBtn = document.querySelector(`.tab-item[data-tab="${tabId}"]`);
+      if (tabBtn) tabBtn.classList.add('active');
+
+      renderAll();
+    }
+
+    // ---- Event Binding ----
+    function bindEvents() {
+      // FAB
+      $('#fabAdd').addEventListener('click', () => openModal());
+
+      // Modal
+      $('#modalOverlay').addEventListener('click', (e) => {
+        if (e.target === $('#modalOverlay')) closeModal();
+      });
+      $('#btnSave').addEventListener('click', saveReminder);
+      $('#btnCancel').addEventListener('click', closeModal);
+      $('#btnDelete').addEventListener('click', () => {
+        if (editingId) deleteReminder(editingId);
+      });
+
+      // Card actions (delegation)
+      $('#activeList').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+        const id = btn.dataset.id;
+        switch (btn.dataset.action) {
+          case 'complete': completeReminder(id); break;
+          case 'edit': {
+            const r = reminders.find(r => r.id === id);
+            if (r) openModal(r);
+            break;
+          }
+          case 'delete': {
+            if (confirm('确定删除这个提醒吗？')) {
+              reminders = reminders.filter(r => r.id !== id);
+              saveData();
+              renderAll();
+              showToast('🗑️ 已删除');
+            }
+            break;
+          }
+          case 'skip': skipToday(id); break;
+        }
+      });
+
+      $('#completedList').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+        const id = btn.dataset.id;
+        switch (btn.dataset.action) {
+          case 'restore': restoreReminder(id); break;
+          case 'delete': {
+            if (confirm('确定删除这个提醒吗？')) {
+              reminders = reminders.filter(r => r.id !== id);
+              saveData();
+              renderAll();
+              showToast('🗑️ 已删除');
+            }
+            break;
+          }
+        }
+      });
+
+      // Tab bar
+      $$('.tab-item').forEach(btn => {
+        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+      });
+
+      // Settings
+      $('#btnNotifyPerm').addEventListener('click', askNotificationPermission);
+      $('#btnExport').addEventListener('click', exportData);
+      $('#btnImport').addEventListener('click', () => $('#importFileInput').click());
+      $('#importFileInput').addEventListener('change', (e) => {
+        if (e.target.files[0]) importData(e.target.files[0]);
+        e.target.value = '';
+      });
+      $('#btnClear').addEventListener('click', clearAllData);
+
+      // Keyboard shortcuts
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeModal();
+        if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
+          e.preventDefault();
+          openModal();
+        }
+      });
+
+      // Prevent double-tap zoom
+      document.addEventListener('dblclick', (e) => {
+        if (e.target.closest('button') || e.target.closest('.reminder-card')) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+    }
+
+    // ---- Bootstrap ----
+    document.addEventListener('DOMContentLoaded', init);
+
+    // ---- Register Service Worker ----
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
