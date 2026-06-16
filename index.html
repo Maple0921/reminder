@@ -715,6 +715,7 @@
     // ---- Init ----
     function init() {
       try { loadData(); } catch(e) { console.error('[初始化] loadData 失败:', e); }
+      try { autoCompleteOverdue(); } catch(e) { console.error('[初始化] autoCompleteOverdue 失败:', e); }
       try { updateHeaderDate(); } catch(e) { console.error('[初始化] updateHeaderDate 失败:', e); }
       try { renderAll(); } catch(e) { console.error('[初始化] renderAll 失败:', e); }
       try { requestNotificationPermission(); } catch(e) { console.error('[初始化] 通知权限检查失败:', e); }
@@ -1165,19 +1166,6 @@
           const ok = sendNotification('⏱️ 事项已结束', `${r.title}\n结束时间 ${r.endTime} 已到`);
           if (ok) { notifiedMap[endKey2] = true; notificationSent = true; }
         }
-
-        // ---- 自动完成: 非重复事项结束后自动标记完成 ----
-        if (!r.repeat || r.repeat === 'none') {
-          // 结束时间已过 5 分钟以上，自动完成
-          if (nowTime >= addMinutes(r.endTime, 5)) {
-            console.log('[自动完成]', r.title, '结束时间已过，自动标记完成');
-            r.completed = true;
-            r.completedDate = new Date().toISOString();
-            saveData();
-            renderAll();
-            showToast(`✅ ${r.title} — 已自动完成`);
-          }
-        }
       });
 
       // Cleanup old notification records (keep only today's)
@@ -1186,6 +1174,36 @@
       });
 
       return notificationSent;
+    }
+
+    // ---- 自动完成: 独立函数，检查所有非重复过期事项 ----
+    function autoCompleteOverdue() {
+      const nowTime = getNowTimeStr();
+      const today = getTodayStr();
+      let changed = false;
+
+      reminders.forEach(r => {
+        if (r.completed) return;
+        // 仅自动完成非重复的一次性事项
+        if (r.repeat && r.repeat !== 'none') return;
+
+        // 过去日期 OR 今天已过结束时间+5分钟
+        const isPastDate = r.date < today;
+        const isTodayOverdue = (r.date === today) && (nowTime >= addMinutes(r.endTime, 5));
+
+        if (isPastDate || isTodayOverdue) {
+          console.log('[自动完成]', r.title, `日期=${r.date} 结束=${r.endTime}`);
+          r.completed = true;
+          r.completedDate = new Date().toISOString();
+          changed = true;
+        }
+      });
+
+      if (changed) {
+        saveData();
+        renderAll();
+        showToast('✅ 过期事项已自动完成');
+      }
     }
 
     function addMinutes(timeStr, mins) {
@@ -1209,11 +1227,13 @@
       // Initial check
       console.log('[通知] 启动通知检查器, 当前权限:', Notification.permission);
       checkAndNotify();
+      autoCompleteOverdue();
 
       // Periodic check
       setInterval(() => {
         updateHeaderDate();
         checkAndNotify();
+        autoCompleteOverdue();
       }, NOTIFY_CHECK_INTERVAL);
 
       // 🔑 关键修复: 监听页面可见性变化
@@ -1224,6 +1244,7 @@
           console.log('[通知] 页面恢复可见，立即检查...');
           updateHeaderDate();
           checkAndNotify();
+          autoCompleteOverdue();
           renderAll();
         }
       });

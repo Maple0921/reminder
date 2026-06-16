@@ -2,7 +2,7 @@
   "name": "提醒事项",
   "short_name": "提醒",
   "description": "简洁好用的提醒事项应用 - 淡蓝色主题",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#F5F7FA",
