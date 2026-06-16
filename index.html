@@ -86,6 +86,85 @@
     .tab-content { display: none; padding: 16px 16px 8px; }
     .tab-content.active { display: block; }
 
+    /* ====== Stats Card ====== */
+    .stats-card {
+      background: linear-gradient(135deg, var(--blue) 0%, var(--blue-dark) 100%);
+      border-radius: var(--radius);
+      padding: 20px 16px;
+      margin: 0 0 16px;
+      color: white;
+      box-shadow: 0 4px 16px rgba(126, 200, 227, 0.3);
+    }
+    .stats-grid {
+      display: flex;
+      justify-content: space-around;
+      text-align: center;
+    }
+    .stat-item {
+      flex: 1;
+    }
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    .stat-label {
+      font-size: 12px;
+      opacity: 0.85;
+      margin-top: 2px;
+    }
+    .stat-sub {
+      font-size: 11px;
+      opacity: 0.7;
+      margin-top: 1px;
+    }
+
+    /* ====== History ====== */
+    .history-date-header {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      padding: 12px 4px 8px;
+      margin-top: 4px;
+    }
+    .history-date-header:first-child { margin-top: 0; padding-top: 0; }
+    .history-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--white);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      margin-bottom: 6px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .history-item-left { flex: 1; }
+    .history-item-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .history-item-time {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+    .history-item-right {
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .history-item-duration {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--blue-dark);
+    }
+    .history-item-check {
+      font-size: 12px;
+      color: var(--success);
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
     /* ====== Empty State ====== */
     .empty-state {
       text-align: center;
@@ -545,14 +624,15 @@
     <div id="activeList"></div>
   </div>
 
-  <!-- Tab: Completed -->
-  <div class="tab-content" id="tab-completed">
-    <div class="empty-state" id="emptyCompleted">
-      <div class="icon">✅</div>
-      <div class="title">暂无已完成事项</div>
-      <div class="desc">完成一个事项后，它会出现在这里</div>
+  <!-- Tab: History -->
+  <div class="tab-content" id="tab-history">
+    <div class="stats-card" id="statsCard"></div>
+    <div class="empty-state" id="emptyHistory">
+      <div class="icon">📊</div>
+      <div class="title">还没有学习记录</div>
+      <div class="desc">完成一个事项后，<br>学习记录会出现在这里</div>
     </div>
-    <div id="completedList"></div>
+    <div id="historyList"></div>
   </div>
 
   <!-- Tab: Settings -->
@@ -621,9 +701,9 @@
       <span class="tab-icon">📋</span>
       <span>事项</span>
     </button>
-    <button class="tab-item" data-tab="tab-completed">
-      <span class="tab-icon">✅</span>
-      <span>已完成</span>
+    <button class="tab-item" data-tab="tab-history">
+      <span class="tab-icon">📊</span>
+      <span>记录</span>
     </button>
     <button class="tab-item" data-tab="tab-settings">
       <span class="tab-icon">⚙️</span>
@@ -729,6 +809,27 @@
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
         reminders = raw ? JSON.parse(raw) : [];
+        // 旧数据迁移: completed/completedDate → completionLog
+        let migrated = false;
+        reminders.forEach(r => {
+          if (!r.completionLog) r.completionLog = [];
+          if (r.completed !== undefined) {
+            // 旧格式 → 新格式
+            if (r.completed && r.completedDate) {
+              const completedDay = r.completedDate.split('T')[0];
+              const dur = getDurationMinutes(r.startTime, r.endTime);
+              r.completionLog.push({ date: completedDay, completedAt: r.completedDate, duration: dur });
+            }
+            delete r.completed;
+            delete r.completedDate;
+            migrated = true;
+          }
+          if (!r.skippedDates) r.skippedDates = [];
+        });
+        if (migrated) {
+          console.log('[数据迁移] 旧格式数据已转换为 completionLog 格式');
+          saveData();
+        }
       } catch(e) {
         reminders = [];
       }
@@ -740,6 +841,31 @@
 
     function generateId() {
       return 'r_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+    }
+
+    // 计算时段分钟数
+    function getDurationMinutes(startTime, endTime) {
+      const [sh, sm] = startTime.split(':').map(Number);
+      const [eh, em] = endTime.split(':').map(Number);
+      return (eh * 60 + em) - (sh * 60 + sm);
+    }
+
+    // 检查事项今天是否已完成
+    function isCompletedToday(r) {
+      const today = getTodayStr();
+      return r.completionLog && r.completionLog.some(l => l.date === today);
+    }
+
+    // 是否为活跃事项（显示在事项列表）
+    function isActive(r) {
+      // 一次性事项：没有今天的完成记录 AND 日期未过
+      if (!r.repeat || r.repeat === 'none') {
+        if (isCompletedToday(r)) return false;  // 已完成
+        if (r.date < getTodayStr()) return false; // 已过期
+        return true;
+      }
+      // 重复事项：始终活跃（除非被跳过）
+      return true;
     }
 
     // ---- Header ----
@@ -756,7 +882,7 @@
     // ---- Render ----
     function renderAll() {
       renderActiveList();
-      renderCompletedList();
+      renderHistory();
       renderTabBadge();
     }
 
@@ -832,7 +958,19 @@
     }
 
     function renderActiveList() {
-      const active = reminders.filter(r => !r.completed).sort(sortActive);
+      // 活跃事项: 未过期的一次性 + 所有重复事项（排除今天已跳过的）
+      const today = getTodayStr();
+      const active = reminders.filter(r => {
+        if (r.repeat && r.repeat !== 'none') {
+          // 重复事项始终显示（除非今天被跳过）
+          if (r.skippedDates && r.skippedDates.includes(today)) return false;
+          return true;
+        }
+        // 一次性事项：未完成且日期未过（或就是今天）
+        if (isCompletedToday(r)) return false;
+        return r.date >= today;
+      }).sort(sortActive);
+
       const container = $('#activeList');
       const empty = $('#emptyActive');
 
@@ -849,14 +987,30 @@
         const isToday = effDate === getTodayStr();
         const repeatLabel = getRepeatLabel(r.repeat);
         const advanceLabel = r.advanceMinutes > 0 ? `提前${r.advanceMinutes}分钟` : '';
-        const isSkippedToday = r.repeat && r.repeat !== 'none' && r.skippedDates && r.skippedDates.includes(getTodayStr());
+        const isSkipped = r.skippedDates && r.skippedDates.includes(today);
+        const doneToday = isCompletedToday(r);
+        const isRepeating = r.repeat && r.repeat !== 'none';
+        const duration = getDurationMinutes(r.startTime, r.endTime);
+        const totalDone = getCompletionCount(r);
+
+        let cardClass = '';
+        if (doneToday || isSkipped) cardClass = 'completed-card';
+        let titleStyle = (doneToday || isSkipped) ? 'text-decoration: line-through;' : '';
+
+        // 完成按钮
+        let completeBtn = '';
+        if (doneToday) {
+          completeBtn = `<button class="btn-icon" data-action="undo" data-id="${r.id}" title="撤销">↩️</button>`;
+        } else {
+          completeBtn = `<button class="btn-icon check" data-action="complete" data-id="${r.id}" title="${isRepeating ? '完成今天' : '标记完成'}">✓</button>`;
+        }
 
         return `
-          <div class="reminder-card ${isSkippedToday ? 'completed-card' : ''}" style="animation-delay:${i * 0.04}s" data-id="${r.id}">
+          <div class="reminder-card ${cardClass}" style="animation-delay:${i * 0.04}s" data-id="${r.id}">
             <div class="card-header">
-              <span class="card-title" style="${isSkippedToday ? 'text-decoration: line-through;' : ''}">${escapeHtml(r.title)}</span>
+              <span class="card-title" style="${titleStyle}">${escapeHtml(r.title)}</span>
               <div class="card-actions">
-                <button class="btn-icon check" data-action="complete" data-id="${r.id}" title="标记完成">✓</button>
+                ${completeBtn}
                 <button class="btn-icon" data-action="edit" data-id="${r.id}" title="编辑">✎</button>
                 <button class="btn-icon danger" data-action="delete" data-id="${r.id}" title="删除">✕</button>
               </div>
@@ -865,14 +1019,17 @@
               <span class="time-badge">🕐 ${r.startTime}</span>
               <span class="time-sep">→</span>
               <span class="time-badge">🕑 ${r.endTime}</span>
+              <span class="time-badge" style="background:#E8F8F0;color:var(--success);">📏 ${duration}分钟</span>
               ${isToday ? '<span style="font-size:11px;color:var(--blue);font-weight:600;">今天</span>' : ''}
+              ${doneToday ? '<span style="font-size:11px;color:var(--success);font-weight:600;">✓ 已完成</span>' : ''}
             </div>
             <div class="card-tags">
               <span class="tag date">📅 ${dateLabel}</span>
               ${repeatLabel ? `<span class="tag repeat">🔁 ${repeatLabel}</span>` : ''}
+              ${totalDone > 0 ? `<span class="tag advance">📊 共完成 ${totalDone} 次</span>` : ''}
               ${advanceLabel ? `<span class="tag advance">⏰ ${advanceLabel}</span>` : ''}
-              ${isSkippedToday ? '<span class="tag skipped">⏭️ 今天已跳过</span>' : ''}
-              ${r.repeat && r.repeat !== 'none' && !isSkippedToday && effDate === getTodayStr()
+              ${isSkipped ? '<span class="tag skipped">⏭️ 今天已跳过</span>' : ''}
+              ${isRepeating && !isSkipped && !doneToday
                 ? `<button class="tag skipped" data-action="skip" data-id="${r.id}" style="cursor:pointer;border:none;">⏭️ 跳过今天</button>`
                 : ''}
             </div>
@@ -880,43 +1037,135 @@
       }).join('');
     }
 
-    function renderCompletedList() {
-      const completed = reminders.filter(r => r.completed).sort((a,b) => {
-        return (b.completedDate || '').localeCompare(a.completedDate || '');
-      });
-      const container = $('#completedList');
-      const empty = $('#emptyCompleted');
+    // ---- 统计计算 ----
+    function calculateStats() {
+      const today = getTodayStr();
+      const now = new Date();
+      // 本周一
+      const dayOfWeek = now.getDay();
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+      const mondayStr = `${monday.getFullYear()}-${String(monday.getMonth()+1).padStart(2,'0')}-${String(monday.getDate()).padStart(2,'0')}`;
 
-      if (completed.length === 0) {
+      let todayMin = 0, weekMin = 0, totalMin = 0, todayCount = 0, weekCount = 0, totalCount = 0;
+
+      reminders.forEach(r => {
+        if (!r.completionLog) return;
+        r.completionLog.forEach(log => {
+          totalMin += log.duration || 0;
+          totalCount++;
+          if (log.date === today) { todayMin += log.duration || 0; todayCount++; }
+          if (log.date >= mondayStr && log.date <= today) { weekMin += log.duration || 0; weekCount++; }
+        });
+      });
+
+      return {
+        todayMin, todayCount,
+        weekMin, weekCount,
+        totalMin, totalCount,
+      };
+    }
+
+    function formatHours(minutes) {
+      if (minutes < 60) return `${minutes}分钟`;
+      const h = Math.floor(minutes / 60);
+      const m = minutes % 60;
+      return m > 0 ? `${h}.${Math.round(m/6)}h` : `${h}h`;
+    }
+
+    // ---- 记录页渲染 ----
+    function renderHistory() {
+      const container = $('#historyList');
+      const empty = $('#emptyHistory');
+      const statsCard = $('#statsCard');
+
+      // 收集所有完成记录
+      const allLogs = [];
+      reminders.forEach(r => {
+        if (!r.completionLog) return;
+        r.completionLog.forEach(log => {
+          allLogs.push({
+            title: r.title,
+            startTime: r.startTime,
+            endTime: r.endTime,
+            date: log.date,
+            completedAt: log.completedAt,
+            duration: log.duration,
+            reminderId: r.id,
+          });
+        });
+      });
+
+      // 统计数据
+      const stats = calculateStats();
+      if (statsCard) {
+        statsCard.innerHTML = `
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-value">${formatHours(stats.todayMin)}</div>
+              <div class="stat-label">今日</div>
+              <div class="stat-sub">${stats.todayCount} 次</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value">${formatHours(stats.weekMin)}</div>
+              <div class="stat-label">本周</div>
+              <div class="stat-sub">${stats.weekCount} 次</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value">${formatHours(stats.totalMin)}</div>
+              <div class="stat-label">总计</div>
+              <div class="stat-sub">${stats.totalCount} 次</div>
+            </div>
+          </div>`;
+      }
+
+      if (allLogs.length === 0) {
         container.innerHTML = '';
         empty.style.display = 'block';
         return;
       }
       empty.style.display = 'none';
 
-      container.innerHTML = completed.map((r, i) => `
-        <div class="reminder-card completed-card" style="animation-delay:${i * 0.03}s" data-id="${r.id}">
-          <div class="card-header">
-            <span class="card-title">${escapeHtml(r.title)}</span>
-            <div class="card-actions">
-              <button class="btn-icon" data-action="restore" data-id="${r.id}" title="恢复">↩️</button>
-              <button class="btn-icon danger" data-action="delete" data-id="${r.id}" title="删除">✕</button>
+      // 按日期降序排列
+      allLogs.sort((a, b) => b.date.localeCompare(a.date) || b.completedAt.localeCompare(a.completedAt));
+
+      // 按日期分组
+      let html = '';
+      let currentDate = '';
+      allLogs.forEach(log => {
+        if (log.date !== currentDate) {
+          currentDate = log.date;
+          html += `<div class="history-date-header">📅 ${formatDateCN(log.date)} ${getDayOfWeekCN(log.date)}</div>`;
+        }
+        html += `
+          <div class="history-item">
+            <div class="history-item-left">
+              <div class="history-item-title">${escapeHtml(log.title)}</div>
+              <div class="history-item-time">🕐 ${log.startTime} → ${log.endTime}</div>
             </div>
-          </div>
-          <div class="card-times">
-            <span class="time-badge">🕐 ${r.startTime} → 🕑 ${r.endTime}</span>
-          </div>
-          <div class="card-tags">
-            <span class="tag date">📅 ${formatDateCN(r.date)}</span>
-            ${r.completedDate ? `<span class="tag advance">✅ 完成于 ${formatDateTimeCN(r.completedDate)}</span>` : ''}
-          </div>
-        </div>
-      `).join('');
+            <div class="history-item-right">
+              <div class="history-item-duration">${log.duration} 分钟</div>
+              <div class="history-item-check">✓</div>
+            </div>
+          </div>`;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function getDayOfWeekCN(dateStr) {
+      const d = new Date(dateStr + 'T00:00:00');
+      const weekdays = ['周日','周一','周二','周三','周四','周五','周六'];
+      return weekdays[d.getDay()] || '';
     }
 
     function renderTabBadge() {
-      const count = reminders.filter(r => !r.completed).length;
-      // No badge needed with bottom tab style
+      const today = getTodayStr();
+      const count = reminders.filter(r => {
+        if (r.repeat && r.repeat !== 'none') return !isCompletedToday(r);
+        return !isCompletedToday(r) && r.date >= today;
+      }).length;
+      // bottom tab style, no badge needed
     }
 
     // ---- Helpers ----
@@ -993,8 +1242,7 @@
         reminders.push({
           id: generateId(),
           title, date, startTime, endTime, advanceMinutes, repeat,
-          completed: false,
-          completedDate: null,
+          completionLog: [],
           skippedDates: [],
           createdAt: new Date().toISOString(),
         });
@@ -1015,24 +1263,42 @@
       showToast('🗑️ 提醒已删除');
     }
 
-    function completeReminder(id) {
+    // 完成今天的实例（适用于重复事项）
+    function completeTodayInstance(id) {
       const idx = reminders.findIndex(r => r.id === id);
       if (idx === -1) return;
-      reminders[idx].completed = true;
-      reminders[idx].completedDate = new Date().toISOString();
+      const r = reminders[idx];
+      const today = getTodayStr();
+      // 防止重复完成
+      if (r.completionLog.some(l => l.date === today)) {
+        showToast('今日已完成过了 ✓');
+        return;
+      }
+      const duration = getDurationMinutes(r.startTime, r.endTime);
+      r.completionLog.push({
+        date: today,
+        completedAt: new Date().toISOString(),
+        duration: duration,
+      });
       saveData();
       renderAll();
-      showToast('✅ 已完成！');
+      showToast(`✅ 已完成！学习 ${duration} 分钟`);
     }
 
-    function restoreReminder(id) {
+    // 撤销今天的完成记录
+    function undoTodayInstance(id) {
       const idx = reminders.findIndex(r => r.id === id);
       if (idx === -1) return;
-      reminders[idx].completed = false;
-      reminders[idx].completedDate = null;
+      const today = getTodayStr();
+      reminders[idx].completionLog = reminders[idx].completionLog.filter(l => l.date !== today);
       saveData();
       renderAll();
-      showToast('↩️ 已恢复');
+      showToast('↩️ 已撤销');
+    }
+
+    // 获取事项的总完成次数
+    function getCompletionCount(r) {
+      return r.completionLog ? r.completionLog.length : 0;
     }
 
     function skipToday(id) {
@@ -1123,16 +1389,16 @@
       let notificationSent = false;
 
       reminders.forEach(r => {
-        if (r.completed) return;
+        if (isCompletedToday(r)) return; // 今天已完成，不发通知
 
         // Determine if this reminder is active today
-        let isActive = false;
+        let shouldNotify = false;
         if (r.repeat && r.repeat !== 'none') {
-          isActive = matchesRepeat(r, today);
+          shouldNotify = matchesRepeat(r, today);
         } else {
-          isActive = (r.date === today);
+          shouldNotify = (r.date === today);
         }
-        if (!isActive) return;
+        if (!shouldNotify) return;
 
         // ---- 通知检查 (去掉 5 分钟窗口限制, notifiedMap 防止重复) ----
 
@@ -1183,18 +1449,23 @@
       let changed = false;
 
       reminders.forEach(r => {
-        if (r.completed) return;
         // 仅自动完成非重复的一次性事项
         if (r.repeat && r.repeat !== 'none') return;
+        // 跳过今天已完成或已记录过的
+        if (isCompletedToday(r)) return;
 
         // 过去日期 OR 今天已过结束时间+5分钟
         const isPastDate = r.date < today;
         const isTodayOverdue = (r.date === today) && (nowTime >= addMinutes(r.endTime, 5));
 
         if (isPastDate || isTodayOverdue) {
-          console.log('[自动完成]', r.title, `日期=${r.date} 结束=${r.endTime}`);
-          r.completed = true;
-          r.completedDate = new Date().toISOString();
+          const duration = getDurationMinutes(r.startTime, r.endTime);
+          r.completionLog.push({
+            date: r.date,
+            completedAt: new Date().toISOString(),
+            duration: duration,
+          });
+          console.log('[自动完成]', r.title, `日期=${r.date} 时长=${duration}分钟`);
           changed = true;
         }
       });
@@ -1342,7 +1613,8 @@
         if (!btn) return;
         const id = btn.dataset.id;
         switch (btn.dataset.action) {
-          case 'complete': completeReminder(id); break;
+          case 'complete': completeTodayInstance(id); break;
+          case 'undo': undoTodayInstance(id); break;
           case 'edit': {
             const r = reminders.find(r => r.id === id);
             if (r) openModal(r);
@@ -1358,25 +1630,6 @@
             break;
           }
           case 'skip': skipToday(id); break;
-        }
-      });
-
-      $('#completedList').addEventListener('click', (e) => {
-        const targetEl = e.target instanceof Element ? e.target : e.target.parentElement;
-        const btn = targetEl && targetEl.closest('[data-action]');
-        if (!btn) return;
-        const id = btn.dataset.id;
-        switch (btn.dataset.action) {
-          case 'restore': restoreReminder(id); break;
-          case 'delete': {
-            if (confirm('确定删除这个提醒吗？')) {
-              reminders = reminders.filter(r => r.id !== id);
-              saveData();
-              renderAll();
-              showToast('🗑️ 已删除');
-            }
-            break;
-          }
         }
       });
 
